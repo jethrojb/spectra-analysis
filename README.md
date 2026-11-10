@@ -1,0 +1,1 @@
+This tool is intended to streamline the process of plotting spectra from .csv files output by a Carey UV-Vis photospectrometer. It includes functionality for plotting spectra, taking the difference between samples, and calculating the concentration of hemoproteins.
