@@ -1,0 +1,27 @@
+# Virtual environment
+env/
+.venv/
+venv/
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Generated outputs
+outputs/
+
+# Local data & scratch files
+Export Data 2026-09-18-H6.csv
+2026-11-09-mb2xstar.csv
+# Or use *.csv to ignore all future raw data CSVs automatically:
+# *.csv
+.other/
+analyze_spectra.ipynb
+
+# Editor backup / undo files (Vim, etc.)
+*~
+*.un~
+*.swp
