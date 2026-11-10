@@ -396,26 +396,44 @@ with tab_diff:
             unit=out_unit,  # type: ignore[arg-type]
         )
 
+        is_diff_spec = conc_spectrum in active_ds.difference_columns
+        spec_badge = "Difference Spectrum (ΔA)" if is_diff_spec else "Single Sample Spectrum (A)"
+        st.markdown(
+            f"**Active Calculation Equation** — *{conc_spectrum}* (`{spec_badge}`):"
+        )
+        st.latex(
+            conc_res.to_latex(
+                is_difference=is_diff_spec,
+                target_window=target_wl_arg if isinstance(target_wl_arg, tuple) else None,
+            )
+        )
+
         res_col1, res_col2, res_col3, res_col4 = st.columns(4)
         unit_disp = "µM" if conc_res.unit == "uM" else conc_res.unit
+        conc_disp = (
+            f"{conc_res.concentration:.2f}"
+            if abs(conc_res.concentration) >= 1.0
+            else f"{conc_res.concentration:.4g}"
+        )
         res_col1.metric(
             "Calculated Concentration",
-            f"{conc_res.concentration:.2f} {unit_disp}",
+            f"{conc_disp} {unit_disp}",
         )
         res_col2.metric(
-            f"A({conc_res.target_wavelength_nm:.0f} nm)",
+            f"{'ΔA' if is_diff_spec else 'A'}({conc_res.target_wavelength_nm:.0f} nm)",
             f"{conc_res.target_absorbance:.5f}",
         )
         if conc_res.reference_wavelength_nm is not None:
             res_col3.metric(
-                f"A({conc_res.reference_wavelength_nm:.0f} nm)",
+                f"{'ΔA' if is_diff_spec else 'A'}({conc_res.reference_wavelength_nm:.0f} nm)",
                 f"{conc_res.reference_absorbance:.5f}",
             )
         else:
             res_col3.metric("Reference Subtracted", "None")
-        res_col4.metric("Δ Absorbance", f"{conc_res.delta_absorbance:.5f}")
+        res_col4.metric("Net Absorbance Term", f"{conc_res.delta_absorbance:.5f}")
 
-        st.code(conc_res.summary(), language="text")
+        with st.expander("📋 Copyable Text Summary"):
+            st.code(conc_res.summary(), language="text")
     except Exception as exc:
         st.warning(f"Could not compute concentration: {exc}")
 

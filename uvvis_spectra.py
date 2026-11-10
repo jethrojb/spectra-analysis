@@ -92,6 +92,80 @@ class ConcentrationResult:
             f"Concentration     : {self.concentration:.3f} {unit_label}"
         )
 
+    def to_latex(
+        self,
+        is_difference: bool = False,
+        target_window: tuple[float, float] | None = None,
+    ) -> str:
+        """
+        Generates a multi-line LaTeX equation string showing both the symbolic formula
+        (adapted to the selected options) and the substituted numerical values.
+        """
+        abs_sym = r"\Delta A" if is_difference else "A"
+        t_wl = f"{self.target_wavelength_nm:g}"
+
+        if target_window is not None:
+            w_min, w_max = min(target_window), max(target_window)
+            target_sym = (
+                rf"{abs_sym}_{{\text{{peak}} [{w_min:g}\text{{--}}{w_max:g}\text{{ nm}}]"
+                rf" \, ({t_wl}\text{{ nm}})}}"
+            )
+        else:
+            target_sym = rf"{abs_sym}_{{{t_wl}\text{{ nm}}}}"
+
+        if self.reference_wavelength_nm is not None:
+            r_wl = f"{self.reference_wavelength_nm:g}"
+            ref_sym = rf"{abs_sym}_{{{r_wl}\text{{ nm}}}}"
+            num_sym = rf"{target_sym} - {ref_sym}"
+            ref_val_str = (
+                f"({self.reference_absorbance:.5f})"
+                if self.reference_absorbance < 0
+                else f"{self.reference_absorbance:.5f}"
+            )
+            num_val = f"{self.target_absorbance:.5f} - {ref_val_str}"
+        else:
+            num_sym = target_sym
+            num_val = f"{self.target_absorbance:.5f}"
+
+        # Extinction coefficient term
+        if self.extinction_coeff_unit == "mM^-1 cm^-1":
+            eps_sym = r"(\varepsilon \times 10^{3})"
+            eps_val = (
+                rf"\left({self.extinction_coeff:,.4g}\ \text{{mM}}^{{-1}}\text{{cm}}^{{-1}}"
+                rf" \times 10^{{3}}\right)"
+            )
+        else:
+            eps_sym = r"\varepsilon"
+            eps_val = rf"\left({self.extinction_coeff:,.6g}\ \text{{M}}^{{-1}}\text{{cm}}^{{-1}}\right)"
+
+        # Unit conversion factor from M to target unit
+        unit_latex = r"\mu\text{M}" if self.unit == "uM" else rf"\text{{{self.unit}}}"
+        if self.unit == "uM":
+            scale_sym = r" \times 10^{6}"
+            scale_val = r" \times 10^{6}\ \mu\text{M}\cdot\text{M}^{-1}"
+        elif self.unit == "mM":
+            scale_sym = r" \times 10^{3}"
+            scale_val = r" \times 10^{3}\ \text{mM}\cdot\text{M}^{-1}"
+        else:
+            scale_sym = ""
+            scale_val = ""
+
+        df_sym = r"\text{DF} \times " if self.dilution_factor != 1.0 else ""
+        df_val = f"{self.dilution_factor:g} \\times " if self.dilution_factor != 1.0 else ""
+        conc_str = (
+            f"{self.concentration:.2f}"
+            if abs(self.concentration) >= 1.0
+            else f"{self.concentration:.4g}"
+        )
+
+        return (
+            r"\begin{aligned}" + "\n"
+            rf"C &= {df_sym}\frac{{{num_sym}}}{{{eps_sym} \cdot l}}{scale_sym} \\[8pt]" + "\n"
+            rf"&= {df_val}\frac{{{num_val}}}{{{eps_val} \cdot \left({self.pathlength_cm:g}\ \text{{cm}}\right)}}{scale_val} "
+            rf"= \mathbf{{{conc_str}\ {unit_latex}}}" + "\n"
+            r"\end{aligned}"
+        )
+
 
 @dataclass
 class SpectraDataset:
